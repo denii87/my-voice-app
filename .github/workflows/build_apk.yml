@@ -28,6 +28,9 @@ jobs:
           flutter create temp_app --org com.example
           cp -r temp_app/android ./
           rm -rf temp_app
+          # កំណត់ compileSdkVersion និង targetSdkVersion ទៅ 34 ដើម្បីកុំឱ្យជួប Error ជាមួយ file_picker
+          sed -i 's/compileSdkVersion = flutter.compileSdkVersion/compileSdkVersion = 34/g' android/app/build.gradle || true
+          sed -i 's/targetSdkVersion = flutter.targetSdkVersion/targetSdkVersion = 34/g' android/app/build.gradle || true
 
       - name: Install Dependencies
         run: flutter pub get
