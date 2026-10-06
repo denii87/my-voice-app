@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,6 +34,57 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
   double ttsVolume = 100.0;
   bool removeVocal = false;
   String selectedSpeaker = 'sreymom';
+
+  // អថេរសម្រាប់ផ្ទុកឈ្មោះ និងទំហំ File ដែលបានរើស
+  String? videoFileName;
+  String? videoFileSize;
+  String? srtFileName;
+  String? srtFileSize;
+
+  // Function សម្រាប់ជ្រើសរើសវីដេអូ
+  Future<void> _pickVideoFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.video,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = result.files.single;
+        double sizeInMb = file.size / (1024 * 1024);
+        setState(() {
+          videoFileName = file.name;
+          videoFileSize = '${sizeInMb.toStringAsFixed(2)} MB';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('មិនអាចជ្រើសរើសវីដេអូបានទេ៖ $e')),
+      );
+    }
+  }
+
+  // Function សម្រាប់ជ្រើសរើសឯកសារ SRT
+  Future<void> _pickSrtFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['srt', 'txt', 'vtt'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = result.files.single;
+        double sizeInKb = file.size / 1024;
+        setState(() {
+          srtFileName = file.name;
+          srtFileSize = '${sizeInKb.toStringAsFixed(1)} KB';
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('មិនអាចជ្រើសរើសឯកសារ Subtitle បានទេ៖ $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,22 +120,34 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
               ),
             ),
             const SizedBox(height: 16),
+
+            // Card 1: វីដេអូដើម
             _buildFileCard(
               icon: Icons.video_file_rounded,
               iconColor: Colors.cyanAccent,
               title: 'វីដេអូដើម (Original Video)',
-              subtitle: 'មិនទាន់ជ្រើសរើសវីដេអូនៅឡើយទេ',
-              onTap: () {},
+              subtitle: videoFileName != null
+                  ? '$videoFileName ($videoFileSize)'
+                  : 'មិនទាន់ជ្រើសរើសវីដេអូនៅឡើយទេ',
+              isSelected: videoFileName != null,
+              onTap: _pickVideoFile,
             ),
             const SizedBox(height: 12),
+
+            // Card 2: ឯកសារអត្ថបទ
             _buildFileCard(
               icon: Icons.subtitles_rounded,
               iconColor: Colors.cyanAccent,
               title: 'ឯកសារអត្ថបទ (SRT Subtitles)',
-              subtitle: 'មិនទាន់ជ្រើសរើសឯកសារ SRT នៅឡើយ...',
-              onTap: () {},
+              subtitle: srtFileName != null
+                  ? '$srtFileName ($srtFileSize)'
+                  : 'មិនទាន់ជ្រើសរើសឯកសារ SRT នៅឡើយ...',
+              isSelected: srtFileName != null,
+              onTap: _pickSrtFile,
             ),
             const SizedBox(height: 14),
+
+            // Card 3: កម្រិតសំឡេង (Volume Mixer)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -163,6 +227,8 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
               ),
             ),
             const SizedBox(height: 14),
+
+            // Card 4: សំឡេងលំនាំដើម (Voice Selector)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -217,6 +283,7 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
+    required bool isSelected,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -227,6 +294,10 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFF1B1E26),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.cyanAccent.withOpacity(0.5) : Colors.transparent,
+            width: 1,
+          ),
         ),
         child: Row(
           children: [
@@ -245,11 +316,23 @@ class _AudioDubbingScreenState extends State<AudioDubbingScreen> {
                 children: [
                   Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isSelected ? Colors.cyanAccent : Colors.white38,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 16),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : Icons.arrow_forward_ios_rounded,
+              color: isSelected ? Colors.cyanAccent : Colors.white30,
+              size: 18,
+            ),
           ],
         ),
       ),
