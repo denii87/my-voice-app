@@ -23,11 +23,27 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Create Flutter skeleton
+      - name: Generate complete Android structure
         run: |
-          flutter create --org com.example temp_app
+          # បង្កើត template Android ពេញលេញ
+          flutter create temp_app --org com.example
           cp -r temp_app/android ./
           rm -rf temp_app
+          
+          # បង្ខំឱ្យរាល់ Subprojects និង Library ទាំងអស់ (រួមទាំង flutter_plugin_android_lifecycle) ប្រើ compileSdk 36
+          cat << 'EOF' >> android/build.gradle
+
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty("android")) {
+                      android {
+                          compileSdkVersion 36
+                          buildToolsVersion "34.0.0"
+                      }
+                  }
+              }
+          }
+          EOF
 
       - name: Install Dependencies
         run: flutter pub get
